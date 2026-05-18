@@ -747,6 +747,107 @@
   }
 
   .copy-btn:hover { background: var(--bg4); color: var(--text); }
+  /* PAYWALL */
+  .paywall-overlay {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .paywall-blur {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.5;
+  }
+
+  .paywall-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10,10,11,0.85);
+    backdrop-filter: blur(2px);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    z-index: 10;
+  }
+
+  .paywall-icon {
+    font-size: 32px;
+    margin-bottom: 0.75rem;
+  }
+
+  .paywall-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .paywall-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+  }
+
+  .paywall-btn {
+    padding: 12px 28px;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    box-shadow: 0 0 30px rgba(0,229,160,0.2);
+    letter-spacing: -0.01em;
+  }
+
+  .paywall-btn:hover { background: #00ffb2; transform: scale(1.02); }
+
+  .paywall-price {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 4px;
+    font-family: var(--font-display);
+  }
+
+  .paywall-price-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  .lock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 3px 10px;
+    margin-bottom: 0.75rem;
+  }
+
+  .hustle-card.locked .tab-btn[data-tab="1"],
+  .hustle-card.locked .tab-btn[data-tab="2"],
+  .hustle-card.locked .tab-btn[data-tab="3"] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
 
   /* INCOME PROJECTION */
   .projection {
@@ -1028,6 +1129,27 @@ Keep each field SHORT. Description max 2 sentences. Tasks max 10 words each.`;
     }
   }
 
+  // PAYWALL STATE
+  let isPremium = false;
+  const GUMROAD_URL = 'https://vincentia320.gumroad.com/l/zmojc'; // Replace with your Gumroad link
+
+  function unlockPremium() {
+    window.open(GUMROAD_URL, '_blank');
+    // After purchase, user can enter access code or we trust them
+    // Simple approach: show alert to confirm purchase
+    setTimeout(() => {
+      const confirmed = confirm('Have you completed your purchase? Click OK to unlock your full plan!');
+      if (confirmed) {
+        isPremium = true;
+        document.querySelectorAll('.paywall-card').forEach(el => el.remove());
+        document.querySelectorAll('.paywall-blur').forEach(el => el.classList.remove('paywall-blur'));
+        document.querySelectorAll('.hustle-card').forEach(el => el.classList.remove('locked'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.style.opacity = '1');
+        document.querySelectorAll('.tab-btn').forEach(el => el.style.cursor = 'pointer');
+      }
+    }, 2000);
+  }
+
   function renderResults(hustles, profile) {
     document.getElementById('loading-section').style.display = 'none';
     document.getElementById('results-section').style.display = 'block';
@@ -1091,9 +1213,9 @@ Keep each field SHORT. Description max 2 sentences. Tasks max 10 words each.`;
 
           <div class="hustle-tabs" id="tabs-${i}">
             <button class="tab-btn active" onclick="switchTab(${i}, 0, this)">Overview</button>
-            <button class="tab-btn" onclick="switchTab(${i}, 1, this)">30-Day Roadmap</button>
-            <button class="tab-btn" onclick="switchTab(${i}, 2, this)">Tools & Resources</button>
-            <button class="tab-btn" onclick="switchTab(${i}, 3, this)">Template</button>
+            <button class="tab-btn" data-tab="1" onclick="handleTabClick(${i}, 1, this)">30-Day Roadmap ${i > 0 ? '🔒' : ''}</button>
+            <button class="tab-btn" data-tab="2" onclick="handleTabClick(${i}, 2, this)">Tools ${i > 0 ? '🔒' : ''}</button>
+            <button class="tab-btn" data-tab="3" onclick="handleTabClick(${i}, 3, this)">Template 🔒</button>
           </div>
 
           <div class="tab-content active" id="tab-${i}-0">
@@ -1128,8 +1250,16 @@ Keep each field SHORT. Description max 2 sentences. Tasks max 10 words each.`;
             <div class="phase-tasks">${mistakesHTML}</div>
           </div>
 
-          <div class="tab-content" id="tab-${i}-1">
-            <div class="roadmap">${roadmapHTML}</div>
+          <div class="tab-content paywall-overlay" id="tab-${i}-1">
+            <div class="${i > 0 ? 'paywall-blur' : ''}"><div class="roadmap">${roadmapHTML}</div></div>
+            ${i > 0 ? `<div class="paywall-card">
+              <div class="lock-badge">🔒 Premium</div>
+              <div class="paywall-title">Unlock Your Full 30-Day Roadmap</div>
+              <div class="paywall-sub">Get step-by-step action plans for all 3 hustles + templates + tools</div>
+              <div class="paywall-price">$7</div>
+              <div class="paywall-price-sub">one-time · instant access</div>
+              <button class="paywall-btn" onclick="unlockPremium()">✦ Unlock Full Plan</button>
+            </div>` : ''}
           </div>
 
           <div class="tab-content" id="tab-${i}-2">
@@ -1137,20 +1267,42 @@ Keep each field SHORT. Description max 2 sentences. Tasks max 10 words each.`;
             <div class="tools-grid">${toolsHTML}</div>
           </div>
 
-          <div class="tab-content" id="tab-${i}-3">
-            <div class="section-title">Your ready-to-use template</div>
-            <div class="template-label">${h.template_label}</div>
-            <div class="template-box" id="tmpl-${i}">${h.template}</div>
-            <button class="copy-btn" onclick="copyTemplate(${i})">
+          <div class="tab-content paywall-overlay" id="tab-${i}-3">
+            <div class="${'paywall-blur'}">
+              <div class="section-title">Your ready-to-use template</div>
+              <div class="template-label">${h.template_label}</div>
+              <div class="template-box" id="tmpl-${i}">${h.template}</div>
+              <button class="copy-btn" onclick="copyTemplate(${i})">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               Copy template
             </button>
+            </div>
+            <div class="paywall-card">
+              <div class="lock-badge">🔒 Premium</div>
+              <div class="paywall-title">Unlock This Template</div>
+              <div class="paywall-sub">Get ready-to-use pitch emails, DMs, and gig descriptions for all 3 hustles</div>
+              <div class="paywall-price">$7</div>
+              <div class="paywall-price-sub">one-time · instant access</div>
+              <button class="paywall-btn" onclick="unlockPremium()">✦ Unlock Full Plan</button>
+            </div>
           </div>
         </div>
       `;
     }).join('');
 
     document.getElementById('results-content').innerHTML = html;
+  }
+
+  function handleTabClick(cardIdx, tabIdx, btn) {
+    // Tab 3 (Template) always locked until premium
+    // Tabs 1 & 2 locked only for hustles 1 & 2 (index > 0)
+    const isLocked = (tabIdx === 3) || (tabIdx > 0 && cardIdx > 0);
+    if (!isPremium && isLocked) {
+      // Switch to the tab to show the paywall
+      switchTab(cardIdx, tabIdx, btn);
+      return;
+    }
+    switchTab(cardIdx, tabIdx, btn);
   }
 
   function switchTab(cardIdx, tabIdx, btn) {

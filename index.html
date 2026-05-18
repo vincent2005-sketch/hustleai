@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HustleAI — Your Personal Income Roadmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0b; --bg2: #111114; --bg3: #18181d; --bg4: #1f1f26;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f0; --text2: #9d9daa; --text3: #5a5a68;
+    --accent: #00e5a0; --accent2: #00b87a; --accent-dim: rgba(0,229,160,0.08); --accent-dim2: rgba(0,229,160,0.15);
+    --gold: #f5c842; --font-display: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+    --radius: 12px; --radius-lg: 18px; --radius-xl: 24px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: 0.4; }
+  .glow-bg { position: fixed; top: -20%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(0,229,160,0.06) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+
+  nav { position: sticky; top: 0; z-index: 100; background: rgba(10,10,11,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+  .logo span { color: var(--accent); }
+  .nav-right { display: flex; align-items: center; gap: 1rem; }
+  .nav-user { font-size: 13px; color: var(--text2); }
+  .nav-btn { padding: 6px 16px; border-radius: 99px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-size: 13px; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+  .nav-btn:hover { background: var(--bg3); color: var(--text); }
+  .nav-btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .nav-btn.primary:hover { background: #00ffb2; }
+
+  /* AUTH MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius-xl); padding: 2rem; width: 100%; max-width: 400px; margin: 1rem; position: relative; }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text3); cursor: pointer; font-size: 20px; line-height: 1; }
+  .modal-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; letter-spacing: -0.02em; }
+  .modal-sub { font-size: 14px; color: var(--text2); margin-bottom: 1.5rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; }
+  .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-family: var(--font-body); font-size: 14px; color: var(--text); transition: border-color 0.2s; }
+  .form-input:focus { outline: none; border-color: rgba(0,229,160,0.3); }
+  .form-input::placeholder { color: var(--text3); }
+  .auth-btn { width: 100%; padding: 12px; background: var(--accent); color: #000; font-family: var(--font-display); font-size: 15px; font-weight: 700; border: none; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; margin-top: 0.5rem; }
+  .auth-btn:hover { background: #00ffb2; }
+  .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .auth-switch { text-align: center; font-size: 13px; color: var(--text2); margin-top: 1rem; }
+  .auth-switch a { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .auth-error { background: rgba(255,90,90,0.1); border: 1px solid rgba(255,90,90,0.2); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: #ff9999; margin-bottom: 1rem; display: none; }
+  .auth-success { background: var(--accent-dim2); border: 1px solid rgba(0,229,160,0.2); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--accent); margin-bottom: 1rem; display: none; }
+
+  /* HERO */
+  .hero { position: relative; z-index: 1; text-align: center; padding: 5rem 1.5rem 3rem; max-width: 720px; margin: 0 auto; }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem; padding: 6px 14px; border: 1px solid rgba(0,229,160,0.2); border-radius: 99px; background: var(--accent-dim); }
+  .hero-eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.7); } }
+  .hero h1 { font-family: var(--font-display); font-size: clamp(36px, 6vw, 60px); font-weight: 800; line-height: 1.08; letter-spacing: -0.04em; color: var(--text); margin-bottom: 1.25rem; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p { font-size: 17px; color: var(--text2); line-height: 1.7; font-weight: 300; max-width: 520px; margin: 0 auto 2rem; }
+  .hero-stats { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+  .stat { text-align: center; }
+  .stat-num { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text); }
+  .stat-label { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* MAIN */
+  .main { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* DASHBOARD */
+  #dashboard-section { display: none; animation: fadeUp 0.5s ease forwards; }
+  .dashboard-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: gap; gap: 1rem; }
+  .dashboard-title { font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
+  .dashboard-title span { color: var(--accent); }
+  .new-plan-btn { padding: 10px 20px; background: var(--accent); color: #000; font-family: var(--font-display); font-size: 14px; font-weight: 700; border: none; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; }
+  .new-plan-btn:hover { background: #00ffb2; }
+  .saved-plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .saved-plan-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; cursor: pointer; transition: border-color 0.2s, transform 0.15s; }
+  .saved-plan-card:hover { border-color: rgba(0,229,160,0.2); transform: translateY(-2px); }
+  .saved-plan-emoji { font-size: 28px; margin-bottom: 0.75rem; }
+  .saved-plan-title { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .saved-plan-date { font-size: 12px; color: var(--text3); }
+  .empty-state { text-align: center; padding: 3rem; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-xl); }
+  .empty-state-title { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .empty-state-sub { font-size: 14px; color: var(--text2); margin-bottom: 1.5rem; }
+
+  /* FORM */
+  #form-section { animation: fadeUp 0.5s ease forwards; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; transition: border-color 0.2s; }
+  .form-card:hover { border-color: var(--border2); }
+  .form-card.full { grid-column: 1 / -1; }
+  .form-card-label { font-family: var(--font-display); font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.875rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { cursor: pointer; padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 400; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); transition: all 0.15s; user-select: none; white-space: nowrap; }
+  .chip:hover { border-color: var(--border2); color: var(--text); }
+  .chip.selected { background: var(--accent-dim2); border-color: rgba(0,229,160,0.35); color: var(--accent); font-weight: 500; }
+  .text-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-family: var(--font-body); font-size: 14px; color: var(--text); resize: vertical; min-height: 80px; transition: border-color 0.2s; line-height: 1.6; }
+  .text-input::placeholder { color: var(--text3); }
+  .text-input:focus { outline: none; border-color: rgba(0,229,160,0.3); }
+  .cta-wrap { margin-top: 1.5rem; }
+  .cta-btn { width: 100%; padding: 16px 2rem; background: var(--accent); color: #000; font-family: var(--font-display); font-size: 16px; font-weight: 700; border: none; border-radius: var(--radius-lg); cursor: pointer; transition: background 0.15s, transform 0.1s, box-shadow 0.15s; letter-spacing: -0.01em; box-shadow: 0 0 40px rgba(0,229,160,0.15); }
+  .cta-btn:hover { background: #00ffb2; box-shadow: 0 0 60px rgba(0,229,160,0.25); }
+  .cta-btn:disabled { background: var(--accent2); cursor: not-allowed; opacity: 0.6; box-shadow: none; }
+  .cta-sub { text-align: center; font-size: 12px; color: var(--text3); margin-top: 0.75rem; }
+
+  /* LOADING */
+  #loading-section { display: none; text-align: center; padding: 4rem 1rem; }
+  .loading-ring { width: 56px; height: 56px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.5rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+  .loading-sub { font-size: 14px; color: var(--text3); }
+
+  /* RESULTS */
+  #results-section { display: none; animation: fadeUp 0.5s ease forwards; }
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .results-title { font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); }
+  .results-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .restart-btn { padding: 8px 18px; border-radius: 99px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-size: 13px; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+  .restart-btn:hover { background: var(--bg3); color: var(--text); }
+  .save-btn { padding: 8px 18px; border-radius: 99px; border: 1px solid rgba(0,229,160,0.3); background: var(--accent-dim); color: var(--accent); font-size: 13px; cursor: pointer; font-family: var(--font-body); font-weight: 500; transition: all 0.15s; }
+  .save-btn:hover { background: var(--accent-dim2); }
+
+  /* HUSTLE CARDS */
+  .hustle-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-xl); margin-bottom: 1.5rem; overflow: hidden; transition: border-color 0.2s; }
+  .hustle-card:hover { border-color: var(--border2); }
+  .hustle-card.featured { border-color: rgba(0,229,160,0.2); box-shadow: 0 0 60px rgba(0,229,160,0.04); }
+  .hustle-header { padding: 1.75rem 2rem; display: flex; align-items: flex-start; gap: 1.25rem; border-bottom: 1px solid var(--border); }
+  .hustle-icon { width: 52px; height: 52px; border-radius: var(--radius); background: var(--accent-dim); border: 1px solid rgba(0,229,160,0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+  .hustle-meta { flex: 1; }
+  .hustle-rank { font-size: 11px; font-weight: 500; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .hustle-name { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+  .hustle-tagline { font-size: 14px; color: var(--text2); line-height: 1.6; font-weight: 300; }
+  .hustle-earn-box { text-align: right; flex-shrink: 0; }
+  .hustle-earn-num { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: var(--accent); letter-spacing: -0.03em; }
+  .hustle-earn-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .hustle-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 2rem; overflow-x: auto; }
+  .tab-btn { padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--text3); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: var(--font-body); }
+  .tab-btn:hover { color: var(--text2); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-content { display: none; padding: 2rem; }
+  .tab-content.active { display: block; }
+  .overview-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+  @media (max-width: 600px) { .overview-grid { grid-template-columns: 1fr 1fr; } .hustle-header { flex-wrap: wrap; } .hustle-earn-box { text-align: left; } }
+  .metric-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.875rem 1rem; }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .metric-val { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); }
+  .metric-val.green { color: var(--accent); }
+  .metric-val.gold { color: var(--gold); }
+  .section-title { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; margin-top: 1.5rem; }
+  .section-title:first-child { margin-top: 0; }
+  .desc-text { font-size: 15px; color: var(--text2); line-height: 1.8; font-weight: 300; }
+  .roadmap { display: flex; flex-direction: column; }
+  .roadmap-phase { display: flex; gap: 1.25rem; position: relative; }
+  .roadmap-phase:not(:last-child)::before { content: ''; position: absolute; left: 18px; top: 40px; bottom: -1px; width: 1px; background: var(--border); }
+  .phase-dot { width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--accent); flex-shrink: 0; position: relative; z-index: 1; }
+  .phase-body { padding-bottom: 1.75rem; flex: 1; }
+  .phase-week { font-size: 11px; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .phase-title { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .phase-desc { font-size: 14px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+  .phase-tasks { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .phase-task { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .phase-task::before { content: '→'; color: var(--accent); font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+  .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+  @media (max-width: 500px) { .tools-grid { grid-template-columns: 1fr; } }
+  .tool-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.125rem; }
+  .tool-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .tool-desc { font-size: 12px; color: var(--text3); line-height: 1.5; }
+  .tool-free { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 99px; margin-top: 6px; }
+  .tool-free.free { background: var(--accent-dim); color: var(--accent); }
+  .tool-free.paid { background: rgba(245,200,66,0.1); color: var(--gold); }
+
+  /* PAYWALL */
+  .tab-content[data-locked="true"] { position: relative; }
+  .paywall-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10,10,11,0.92); border-radius: var(--radius); padding: 2rem; text-align: center; z-index: 10; }
+  .paywall-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+  .paywall-sub { font-size: 13px; color: var(--text2); margin-bottom: 1.25rem; line-height: 1.6; max-width: 280px; }
+  .paywall-price { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--accent); }
+  .paywall-price-sub { font-size: 11px; color: var(--text3); margin-bottom: 1rem; }
+  .paywall-btn { padding: 12px 28px; background: var(--accent); color: #000; font-family: var(--font-display); font-size: 15px; font-weight: 700; border: none; border-radius: var(--radius); cursor: pointer; box-shadow: 0 0 30px rgba(0,229,160,0.2); }
+  .paywall-btn:hover { background: #00ffb2; }
+  .blurred { filter: blur(5px); pointer-events: none; user-select: none; opacity: 0.4; }
+
+  .template-box { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; font-size: 14px; color: var(--text2); line-height: 1.9; white-space: pre-wrap; word-break: break-word; font-family: var(--font-body); font-weight: 300; margin-bottom: 1rem; }
+  .template-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 0.5rem; }
+  .copy-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 13px; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
+  .copy-btn:hover { background: var(--bg4); color: var(--text); }
+  .projection { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .projection-months { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  @media (max-width: 500px) { .projection-months { grid-template-columns: repeat(2, 1fr); } }
+  .proj-month { text-align: center; }
+  .proj-bar-wrap { height: 80px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 6px; }
+  .proj-bar { width: 28px; border-radius: 4px 4px 0 0; background: linear-gradient(to top, var(--accent2), var(--accent)); opacity: 0.7; }
+  .proj-label { font-size: 11px; color: var(--text3); margin-bottom: 2px; }
+  .proj-val { font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--accent); }
+  .error-box { background: rgba(255,90,90,0.08); border: 1px solid rgba(255,90,90,0.2); border-radius: var(--radius); padding: 1rem 1.25rem; color: #ff9999; font-size: 14px; text-align: center; }
+  footer { position: relative; z-index: 1; text-align: center; padding: 2rem; border-top: 1px solid var(--border); font-size: 12px; color: var(--text3); }
+</style>
+</head>
+<body>
+<div class="glow-bg"></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="login-form">
+      <div class="modal-title">Welcome back</div>
+      <div class="modal-sub">Sign in to access your saved plans</div>
+      <div class="auth-error" id="login-error"></div>
+      <div class="auth-success" id="login-success"></div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="login-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="login-password" placeholder="••••••••" />
+      </div>
+      <button class="auth-btn" onclick="handleLogin()">Sign in</button>
+      <div class="auth-switch">No account? <a onclick="switchToRegister()">Sign up free</a></div>
+    </div>
+    <div id="register-form" style="display:none;">
+      <div class="modal-title">Create account</div>
+      <div class="modal-sub">Save and access your hustle plans anytime</div>
+      <div class="auth-error" id="register-error"></div>
+      <div class="auth-success" id="register-success"></div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="register-email" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="register-password" placeholder="Min. 6 characters" />
+      </div>
+      <button class="auth-btn" onclick="handleRegister()">Create account</button>
+      <div class="auth-switch">Already have an account? <a onclick="switchToLogin()">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="logo">Hustle<span>AI</span></div>
+  <div class="nav-right">
+    <span class="nav-user" id="nav-user-email"></span>
+    <button class="nav-btn" id="nav-login-btn" onclick="openModal('login')" style="display:none;">Sign in</button>
+    <button class="nav-btn" id="nav-register-btn" onclick="openModal('register')" style="display:none;">Sign up</button>
+    <button class="nav-btn" id="nav-dashboard-btn" onclick="showDashboard()" style="display:none;">My Plans</button>
+    <button class="nav-btn" id="nav-logout-btn" onclick="handleLogout()" style="display:none;">Sign out</button>
+  </div>
+</nav>
+
+<div class="hero" id="hero-section">
+  <div class="hero-eyebrow">Live AI Engine</div>
+  <h1>Your Personal<br><em>Income Roadmap</em><br>Starts Here</h1>
+  <p>Answer 4 questions. Get a complete, step-by-step plan to start earning online — tailored exactly to your skills, time, and goals.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">3 Plans</div><div class="stat-label">per generation</div></div>
+    <div class="stat"><div class="stat-num">30-Day</div><div class="stat-label">detailed roadmap</div></div>
+    <div class="stat"><div class="stat-num">100%</div><div class="stat-label">personalized</div></div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- DASHBOARD -->
+  <div id="dashboard-section">
+    <div class="dashboard-header">
+      <div class="dashboard-title">My <span>Plans</span></div>
+      <button class="new-plan-btn" onclick="showForm()">✦ New Plan</button>
+    </div>
+    <div id="saved-plans-container"></div>
+  </div>
+
+  <!-- FORM -->
+  <div id="form-section">
+    <div class="form-grid">
+      <div class="form-card">
+        <div class="form-card-label">Your skills — pick all that apply</div>
+        <div class="chips" id="skills-chips">
+          <div class="chip" data-val="writing & copywriting">Writing</div>
+          <div class="chip" data-val="graphic design">Design</div>
+          <div class="chip" data-val="coding & programming">Coding</div>
+          <div class="chip" data-val="video editing">Video editing</div>
+          <div class="chip" data-val="social media management">Social media</div>
+          <div class="chip" data-val="teaching & tutoring">Teaching</div>
+          <div class="chip" data-val="photography">Photography</div>
+          <div class="chip" data-val="music production">Music</div>
+          <div class="chip" data-val="gaming & streaming">Gaming</div>
+          <div class="chip" data-val="digital marketing">Marketing</div>
+          <div class="chip" data-val="sales & communication">Sales</div>
+          <div class="chip" data-val="data & spreadsheets">Data/Excel</div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-card-label">Hours available per week</div>
+        <div class="chips" id="time-chips">
+          <div class="chip" data-val="2–5 hours per week">2–5 hrs</div>
+          <div class="chip" data-val="5–10 hours per week">5–10 hrs</div>
+          <div class="chip" data-val="10–20 hours per week">10–20 hrs</div>
+          <div class="chip" data-val="20+ hours per week">20+ hrs</div>
+        </div>
+        <div class="form-card-label" style="margin-top:1.25rem;">Monthly income goal</div>
+        <div class="chips" id="goal-chips">
+          <div class="chip" data-val="$100–$500/month">$100–500</div>
+          <div class="chip" data-val="$500–$1,500/month">$500–1.5k</div>
+          <div class="chip" data-val="$1,500–$3,000/month">$1.5k–3k</div>
+          <div class="chip" data-val="$3,000+/month">$3k+</div>
+        </div>
+        <div class="form-card-label" style="margin-top:1.25rem;">Experience level</div>
+        <div class="chips" id="exp-chips">
+          <div class="chip" data-val="complete beginner">Beginner</div>
+          <div class="chip" data-val="some experience">Some exp.</div>
+          <div class="chip" data-val="intermediate">Intermediate</div>
+          <div class="chip" data-val="experienced professional">Pro</div>
+        </div>
+      </div>
+      <div class="form-card full">
+        <div class="form-card-label">Tell us more (optional)</div>
+        <textarea id="extra" class="text-input" placeholder="e.g. I'm 19, studying in Germany, have a laptop, interested in finance content..."></textarea>
+      </div>
+    </div>
+    <div class="cta-wrap">
+      <button class="cta-btn" id="gen-btn" onclick="generate()">✦ Generate My Personal Hustle Plan</button>
+      <div class="cta-sub">Takes about 20 seconds · 100% personalized to your inputs</div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading-section">
+    <div class="loading-ring"></div>
+    <div class="loading-title" id="loading-title">Building your roadmap...</div>
+    <div class="loading-sub" id="loading-sub">Analyzing your skills and goals</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results-section">
+    <div class="results-header">
+      <div class="results-title">Your Personal Plan ✦</div>
+      <div class="results-actions">
+        <button class="save-btn" id="save-plan-btn" onclick="savePlan()">↓ Save Plan</button>
+        <button class="restart-btn" onclick="restart()">← Start over</button>
+      </div>
+    </div>
+    <div id="results-content"></div>
+  </div>
+</div>
+
+<footer>HustleAI · AI-generated plans are for educational purposes · Results may vary based on effort</footer>
+
+<script>
+  const SUPABASE_URL = 'https://jonhbaurzdhmxqhtanft.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_574wqrfpWLzEB2Wi7uv7DA_9trPYBT6';
+  const GUMROAD_URL = 'https://vincentia320.gumroad.com/l/zmojc';
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let currentUser = null;
+  let isPremium = false;
+  let currentPlanData = null;
+
+  // AUTH STATE
+  sb.auth.onAuthStateChange(async (event, session) => {
+    currentUser = session?.user || null;
+    if (currentUser) {
+      document.getElementById('nav-user-email').textContent = currentUser.email;
+      document.getElementById('nav-login-btn').style.display = 'none';
+      document.getElementById('nav-register-btn').style.display = 'none';
+      document.getElementById('nav-dashboard-btn').style.display = 'block';
+      document.getElementById('nav-logout-btn').style.display = 'block';
+      await checkPremium();
+    } else {
+      document.getElementById('nav-user-email').textContent = '';
+      document.getElementById('nav-login-btn').style.display = 'block';
+      document.getElementById('nav-register-btn').style.display = 'block';
+      document.getElementById('nav-dashboard-btn').style.display = 'none';
+      document.getElementById('nav-logout-btn').style.display = 'none';
+      isPremium = false;
+    }
+  });
+
+  async function checkPremium() {
+    if (!currentUser) return;
+    const { data } = await sb.from('profiles').select('is_premium').eq('id', currentUser.id).single();
+    isPremium = data?.is_premium || false;
+  }
+
+  // MODAL
+  function openModal(type) {
+    document.getElementById('auth-modal').classList.add('active');
+    if (type === 'register') switchToRegister();
+    else switchToLogin();
+  }
+
+  function closeModal() {
+    document.getElementById('auth-modal').classList.remove('active');
+  }
+
+  function switchToLogin() {
+    document.getElementById('login-form').style.display = 'block';
+    document.getElementById('register-form').style.display = 'none';
+  }
+
+  function switchToRegister() {
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('register-form').style.display = 'block';
+  }
+
+  async function handleLogin() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.style.display = 'none';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+    closeModal();
+  }
+
+  async function handleRegister() {
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const errEl = document.getElementById('register-error');
+    const sucEl = document.getElementById('register-success');
+    errEl.style.display = 'none'; sucEl.style.display = 'none';
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+    if (data.user) {
+      await sb.from('profiles').insert({ id: data.user.id, email: data.user.email, is_premium: false });
+    }
+    sucEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+    sucEl.style.display = 'block';
+  }
+
+  async function handleLogout() {
+    await sb.auth.signOut();
+    showForm();
+  }
+
+  // DASHBOARD
+  async function showDashboard() {
+    document.getElementById('hero-section').style.display = 'none';
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('loading-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('dashboard-section').style.display = 'block';
+    await loadSavedPlans();
+  }
+
+  async function loadSavedPlans() {
+    const container = document.getElementById('saved-plans-container');
+    container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);">Loading...</div>';
+    const { data, error } = await sb.from('saved_plans').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (!data || data.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-title">No saved plans yet</div><div class="empty-state-sub">Generate your first hustle plan and save it!</div><button class="new-plan-btn" onclick="showForm()">✦ Generate Plan</button></div>`;
+      return;
+    }
+    const grid = document.createElement('div');
+    grid.className = 'saved-plans-grid';
+    data.forEach(plan => {
+      const hustles = plan.plan_data?.hustles || [];
+      const card = document.createElement('div');
+      card.className = 'saved-plan-card';
+      card.innerHTML = `<div class="saved-plan-emoji">${hustles[0]?.emoji || '💡'}</div><div class="saved-plan-title">${hustles[0]?.title || 'Hustle Plan'}</div><div class="saved-plan-date">${new Date(plan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>`;
+      card.onclick = () => loadSavedPlan(plan.plan_data);
+      grid.appendChild(card);
+    });
+    container.innerHTML = '';
+    container.appendChild(grid);
+  }
+
+  function loadSavedPlan(planData) {
+    currentPlanData = planData;
+    document.getElementById('dashboard-section').style.display = 'none';
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('hero-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+    renderResults(planData.hustles, {});
+  }
+
+  function showForm() {
+    document.getElementById('hero-section').style.display = 'block';
+    document.getElementById('form-section').style.display = 'block';
+    document.getElementById('dashboard-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('loading-section').style.display = 'none';
+  }
+
+  // SAVE PLAN
+  async function savePlan() {
+    if (!currentUser) { openModal('login'); return; }
+    if (!currentPlanData) return;
+    const btn = document.getElementById('save-plan-btn');
+    btn.textContent = 'Saving...';
+    const { error } = await sb.from('saved_plans').insert({ user_id: currentUser.id, plan_data: currentPlanData });
+    if (error) { btn.textContent = '✗ Error'; setTimeout(() => btn.textContent = '↓ Save Plan', 2000); return; }
+    btn.textContent = '✓ Saved!';
+    setTimeout(() => btn.textContent = '↓ Save Plan', 2000);
+  }
+
+  // CHIPS
+  document.querySelectorAll('.chips').forEach(group => {
+    const multi = group.id === 'skills-chips';
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (!multi) group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.toggle('selected');
+      });
+    });
+  });
+
+  function getSelected(id) {
+    return [...document.querySelectorAll(`#${id} .chip.selected`)].map(c => c.dataset.val);
+  }
+
+  // LOADING
+  const loadingMessages = [
+    ['Analyzing your skills...', 'Finding the best match for your profile'],
+    ['Researching income potential...', 'Looking at real market rates'],
+    ['Building your 30-day roadmap...', 'Creating step-by-step action plans'],
+    ['Writing your templates...', 'Crafting ready-to-use materials'],
+    ['Finalizing your plan...', 'Almost done!'],
+  ];
+  let loadingTimer = null;
+
+  function startLoading() {
+    let idx = 0;
+    function step() {
+      if (idx >= loadingMessages.length) return;
+      const [title, sub] = loadingMessages[idx];
+      document.getElementById('loading-title').textContent = title;
+      document.getElementById('loading-sub').textContent = sub;
+      idx++;
+      loadingTimer = setTimeout(step, 3500);
+    }
+    step();
+  }
+
+  function stopLoading() { if (loadingTimer) clearTimeout(loadingTimer); }
+
+  // GENERATE
+  async function generate() {
+    const skills = getSelected('skills-chips');
+    const time = getSelected('time-chips')[0];
+    const goal = getSelected('goal-chips')[0];
+    const exp = getSelected('exp-chips')[0];
+    const extra = document.getElementById('extra').value.trim();
+    if (!skills.length || !time || !goal || !exp) { alert('Please fill in all required fields.'); return; }
+
+    document.getElementById('form-section').style.display = 'none';
+    document.getElementById('hero-section').style.display = 'none';
+    document.getElementById('loading-section').style.display = 'block';
+    document.getElementById('results-section').style.display = 'none';
+    startLoading();
+
+    const prompt = `Return ONLY a JSON object. No explanation. No markdown.
+User: skills=${skills.join(',')}, time=${time}, goal=${goal}, level=${exp}${extra ? ', extra='+extra : ''}
+Return exactly this JSON with 3 hustles:
+{"hustles":[{"title":"string","emoji":"string","tagline":"string","earning_range":"string","earning_period":"per month","time_to_first_income":"string","difficulty":"string","startup_cost":"string","description":"string","why_you":"string","roadmap":[{"phase":1,"week":"Week 1","title":"string","description":"string","tasks":["string","string","string"]},{"phase":2,"week":"Week 2","title":"string","description":"string","tasks":["string","string","string"]},{"phase":3,"week":"Weeks 3-4","title":"string","description":"string","tasks":["string","string","string"]},{"phase":4,"week":"Month 2+","title":"string","description":"string","tasks":["string","string","string"]}],"income_projection":[{"month":"Month 1","amount":0},{"month":"Month 2","amount":0},{"month":"Month 3","amount":0},{"month":"Month 6","amount":0}],"tools":[{"name":"string","purpose":"string","cost":"string"},{"name":"string","purpose":"string","cost":"string"},{"name":"string","purpose":"string","cost":"string"}],"common_mistakes":["string","string"],"template_label":"string","template":"string at least 80 words professional ready to use"}]}
+Keep descriptions concise. Tasks max 10 words each.`;
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+      });
+      const data = await res.json();
+      const text = data.content.map(i => i.text || '').join('');
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+      currentPlanData = parsed;
+      stopLoading();
+      renderResults(parsed.hustles, { skills, time, goal, exp, extra });
+    } catch (e) {
+      stopLoading();
+      document.getElementById('loading-section').style.display = 'none';
+      document.getElementById('results-section').style.display = 'block';
+      document.getElementById('results-content').innerHTML = `<div class="error-box">Something went wrong. Please try again.<br><br><button class="restart-btn" onclick="restart()">← Try again</button></div>`;
+    }
+  }
+
+  function unlockPremium() {
+    window.open(GUMROAD_URL, '_blank');
+    setTimeout(() => {
+      const confirmed = confirm('Have you completed your purchase? Click OK to unlock your full plan!');
+      if (confirmed) {
+        isPremium = true;
+        document.querySelectorAll('.paywall-overlay').forEach(el => el.remove());
+        document.querySelectorAll('.blurred').forEach(el => el.classList.remove('blurred'));
+        if (currentUser) {
+          sb.from('profiles').update({ is_premium: true }).eq('id', currentUser.id);
+        }
+      }
+    }, 1500);
+  }
+
+  function renderResults(hustles, profile) {
+    document.getElementById('loading-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+
+    const html = hustles.map((h, i) => {
+      const rankLabel = i === 0 ? '⚡ Best Match' : i === 1 ? '🎯 Strong Option' : '🚀 High Ceiling';
+      const maxProj = Math.max(...h.income_projection.map(p => p.amount));
+
+      const roadmapHTML = h.roadmap.map(phase => `
+        <div class="roadmap-phase">
+          <div class="phase-dot">${phase.phase}</div>
+          <div class="phase-body">
+            <div class="phase-week">${phase.week}</div>
+            <div class="phase-title">${phase.title}</div>
+            <div class="phase-desc">${phase.description}</div>
+            <div class="phase-tasks">${phase.tasks.map(t => `<div class="phase-task">${t}</div>`).join('')}</div>
+          </div>
+        </div>`).join('');
+
+      const projHTML = h.income_projection.map(p => {
+        const h2 = Math.max(8, Math.round((p.amount / maxProj) * 75));
+        return `<div class="proj-month"><div class="proj-bar-wrap"><div class="proj-bar" style="height:${h2}px"></div></div><div class="proj-label">${p.month}</div><div class="proj-val">$${p.amount.toLocaleString()}</div></div>`;
+      }).join('');
+
+      const toolsHTML = h.tools.map(t => `
+        <div class="tool-card">
+          <div class="tool-name">${t.name}</div>
+          <div class="tool-desc">${t.purpose}</div>
+          <span class="tool-free ${t.cost.toLowerCase().startsWith('free') ? 'free' : 'paid'}">${t.cost}</span>
+        </div>`).join('');
+
+      const mistakesHTML = h.common_mistakes.map(m => `<div class="phase-task">${m}</div>`).join('');
+
+      // Paywall logic: tab 1 & 2 locked for hustles 1 & 2, tab 3 always locked
+      const roadmapLocked = !isPremium && i > 0;
+      const templateLocked = !isPremium;
+
+      return `
+        <div class="hustle-card ${i === 0 ? 'featured' : ''}">
+          <div class="hustle-header">
+            <div class="hustle-icon">${h.emoji}</div>
+            <div class="hustle-meta">
+              <div class="hustle-rank">${rankLabel}</div>
+              <div class="hustle-name">${h.title}</div>
+              <div class="hustle-tagline">${h.tagline}</div>
+            </div>
+            <div class="hustle-earn-box">
+              <div class="hustle-earn-num">${h.earning_range}</div>
+              <div class="hustle-earn-label">${h.earning_period}</div>
+            </div>
+          </div>
+          <div class="hustle-tabs">
+            <button class="tab-btn active" onclick="switchTab(${i}, 0, this)">Overview</button>
+            <button class="tab-btn" onclick="switchTab(${i}, 1, this)">30-Day Roadmap${roadmapLocked ? ' 🔒' : ''}</button>
+            <button class="tab-btn" onclick="switchTab(${i}, 2, this)">Tools${roadmapLocked ? ' 🔒' : ''}</button>
+            <button class="tab-btn" onclick="switchTab(${i}, 3, this)">Template 🔒</button>
+          </div>
+
+          <div class="tab-content active" id="tab-${i}-0">
+            <div class="overview-grid">
+              <div class="metric-box"><div class="metric-label">First income</div><div class="metric-val green">${h.time_to_first_income}</div></div>
+              <div class="metric-box"><div class="metric-label">Difficulty</div><div class="metric-val">${h.difficulty}</div></div>
+              <div class="metric-box"><div class="metric-label">Startup cost</div><div class="metric-val gold">${h.startup_cost}</div></div>
+            </div>
+            <div class="section-title">What it is</div>
+            <div class="desc-text">${h.description}</div>
+            <div class="section-title">Why you're a great fit</div>
+            <div class="desc-text">${h.why_you}</div>
+            <div class="section-title">Income projection</div>
+            <div class="projection"><div style="font-size:12px;color:var(--text3);margin-bottom:0.25rem;">Conservative estimates</div><div class="projection-months">${projHTML}</div></div>
+            <div class="section-title">Common mistakes to avoid</div>
+            <div class="phase-tasks">${mistakesHTML}</div>
+          </div>
+
+          <div class="tab-content" id="tab-${i}-1" style="position:relative;min-height:200px;">
+            <div class="${roadmapLocked ? 'blurred' : ''}"><div class="roadmap">${roadmapHTML}</div></div>
+            ${roadmapLocked ? `<div class="paywall-overlay"><div style="font-size:32px;margin-bottom:0.75rem;">🔒</div><div class="paywall-title">Unlock Full Roadmap</div><div class="paywall-sub">Get the complete 30-day action plan for all 3 hustles</div><div class="paywall-price">$7</div><div class="paywall-price-sub">one-time · instant access</div><button class="paywall-btn" onclick="unlockPremium()">✦ Unlock Full Plan</button></div>` : ''}
+          </div>
+
+          <div class="tab-content" id="tab-${i}-2" style="position:relative;min-height:200px;">
+            <div class="${roadmapLocked ? 'blurred' : ''}"><div class="tools-grid">${toolsHTML}</div></div>
+            ${roadmapLocked ? `<div class="paywall-overlay"><div style="font-size:32px;margin-bottom:0.75rem;">🔒</div><div class="paywall-title">Unlock Tools & Resources</div><div class="paywall-sub">Get the full tools list for all 3 hustles</div><div class="paywall-price">$7</div><div class="paywall-price-sub">one-time · instant access</div><button class="paywall-btn" onclick="unlockPremium()">✦ Unlock Full Plan</button></div>` : ''}
+          </div>
+
+          <div class="tab-content" id="tab-${i}-3" style="position:relative;min-height:200px;">
+            <div class="${templateLocked ? 'blurred' : ''}">
+              <div class="section-title">Your ready-to-use template</div>
+              <div class="template-label">${h.template_label}</div>
+              <div class="template-box" id="tmpl-${i}">${h.template}</div>
+              <button class="copy-btn" onclick="copyTemplate(${i})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy template</button>
+            </div>
+            ${templateLocked ? `<div class="paywall-overlay"><div style="font-size:32px;margin-bottom:0.75rem;">🔒</div><div class="paywall-title">Unlock This Template</div><div class="paywall-sub">Ready-to-use pitch emails, DMs & gig descriptions</div><div class="paywall-price">$7</div><div class="paywall-price-sub">one-time · instant access</div><button class="paywall-btn" onclick="unlockPremium()">✦ Unlock Full Plan</button></div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('results-content').innerHTML = html;
+  }
+
+  function switchTab(cardIdx, tabIdx, btn) {
+    const card = document.querySelectorAll('.hustle-card')[cardIdx];
+    card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    card.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    card.querySelector(`#tab-${cardIdx}-${tabIdx}`).classList.add('active');
+  }
+
+  function copyTemplate(i) {
+    const text = document.getElementById(`tmpl-${i}`)?.textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).catch(() => {});
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  }
+
+  function restart() {
+    currentPlanData = null;
+    document.getElementById('form-section').style.display = 'block';
+    document.getElementById('hero-section').style.display = 'block';
+    document.getElementById('loading-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('results-content').innerHTML = '';
+    document.getElementById('gen-btn').disabled = false;
+    document.getElementById('gen-btn').textContent = '✦ Generate My Personal Hustle Plan';
+  }
+
+  // Initial nav state
+  document.getElementById('nav-login-btn').style.display = 'block';
+  document.getElementById('nav-register-btn').style.display = 'block';
+</script>
+</body>
+</html>
